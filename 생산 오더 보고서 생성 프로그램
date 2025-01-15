@@ -1,0 +1,41 @@
+REPORT zpp_production_order_report.
+
+TABLES: afko, afpo.
+
+DATA: lt_orders TYPE TABLE OF afko,   "생산 오더 헤더
+      lt_items TYPE TABLE OF afpo,   "생산 오더 항목
+      lv_date_from TYPE sy-datum,    "시작 날짜
+      lv_date_to TYPE sy-datum.      "종료 날짜
+
+PARAMETERS: p_date_from TYPE sy-datum DEFAULT sy-datum-30, "시작 날짜 입력
+            p_date_to   TYPE sy-datum DEFAULT sy-datum.   "종료 날짜 입력
+
+START-OF-SELECTION.
+
+" 1. 생산 오더 헤더 데이터 가져오기
+SELECT * FROM afko
+  INTO TABLE lt_orders
+  WHERE gstrp BETWEEN p_date_from AND p_date_to.
+
+IF sy-subrc = 0.
+  LOOP AT lt_orders INTO DATA(ls_order).
+    " 2. 각 오더의 항목 데이터 가져오기
+    SELECT * FROM afpo
+      INTO TABLE lt_items
+      WHERE aufnr = ls_order-aufnr.
+
+    " 3. 생산 오더 데이터 출력
+    WRITE: / '생산 오더 번호:', ls_order-aufnr,
+           / '작업장:', ls_order-arbpl,
+           / '상태:', ls_order-status,
+           / '계획 수량:', ls_order-plnmg.
+
+    " 항목 데이터 출력
+    LOOP AT lt_items INTO DATA(ls_item).
+      WRITE: / '--> 자재:', ls_item-matnr,
+             / '--> 필요 수량:', ls_item-bdter.
+    ENDLOOP.
+  ENDLOOP.
+ELSE.
+  WRITE: / '조건에 맞는 생산 오더가 없습니다.'.
+ENDIF.
