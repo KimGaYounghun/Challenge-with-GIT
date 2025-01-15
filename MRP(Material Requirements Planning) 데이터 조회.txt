@@ -1,0 +1,33 @@
+REPORT zmrp_availability_check.
+
+TABLES: mdps.
+
+DATA: lt_mrp TYPE TABLE OF mdps,
+      lv_shortage TYPE p DECIMALS 2,
+      lv_available TYPE p DECIMALS 2.
+
+PARAMETERS: p_matnr TYPE matnr, "자재 번호
+            p_werks TYPE werks_d. "플랜트 번호
+
+START-OF-SELECTION.
+
+" 1. MRP 데이터 조회
+SELECT * FROM mdps
+  INTO TABLE lt_mrp
+  WHERE matnr = p_matnr
+    AND werks = p_werks.
+
+IF sy-subrc = 0.
+  LOOP AT lt_mrp INTO DATA(ls_mrp).
+    lv_available = ls_mrp-dispo. "현재 가용 수량
+    lv_shortage = ls_mrp-bedarf - lv_available. "부족분 계산
+
+    WRITE: / '자재 번호:', p_matnr,
+           / '플랜트:', p_werks,
+           / '필요 수량:', ls_mrp-bedarf,
+           / '가용 수량:', lv_available,
+           / '부족 수량:', lv_shortage.
+  ENDLOOP.
+ELSE.
+  WRITE: / '해당 자재에 대한 MRP 데이터가 없습니다.'.
+ENDIF.

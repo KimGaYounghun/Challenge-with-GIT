@@ -1,0 +1,24 @@
+REPORT zqm_update_inspection_result.
+
+TABLES: qamr.
+
+PARAMETERS: p_lot TYPE qamr-prueflos, "검사 로트 번호
+            p_merknr TYPE qamr-merknr, "검사 항목 번호
+            p_result TYPE qamr-result. "검사 결과
+
+START-OF-SELECTION.
+
+" 1. 품질 검사 결과 업데이트
+UPDATE qamr
+  SET result = p_result
+  WHERE prueflos = p_lot
+    AND merknr = p_merknr.
+
+IF sy-subrc = 0.
+  WRITE: / '검사 결과가 성공적으로 업데이트되었습니다.',
+         / '로트 번호:', p_lot,
+         / '검사 항목:', p_merknr,
+         / '결과:', p_result.
+ELSE.
+  WRITE: / '결과 업데이트 중 오류가 발생했습니다.'.
+ENDIF.

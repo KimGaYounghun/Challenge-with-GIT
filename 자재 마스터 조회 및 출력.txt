@@ -1,0 +1,25 @@
+REPORT zmm_material_master_report.
+
+TABLES: mara.
+
+DATA: lt_mara TYPE TABLE OF mara.
+
+PARAMETERS: p_matnr TYPE matnr. "자재 번호
+
+START-OF-SELECTION.
+
+" 1. 자재 마스터 데이터 조회
+SELECT * FROM mara
+  INTO TABLE lt_mara
+  WHERE matnr = p_matnr.
+
+IF sy-subrc = 0.
+  LOOP AT lt_mara INTO DATA(ls_mara).
+    WRITE: / '자재 번호:', ls_mara-matnr,
+           / '자재 유형:', ls_mara-mtart,
+           / '기본 단위:', ls_mara-meins,
+           / '플랜트:', ls_mara-werks.
+  ENDLOOP.
+ELSE.
+  WRITE: / '해당 자재의 데이터가 없습니다.'.
+ENDIF.

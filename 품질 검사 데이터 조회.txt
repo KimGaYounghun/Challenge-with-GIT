@@ -1,0 +1,36 @@
+REPORT zqm_inspection_lot_report.
+
+TABLES: qals, qamr.
+
+DATA: lt_lots TYPE TABLE OF qals,    "품질 검사 로트
+      lt_results TYPE TABLE OF qamr. "검사 결과 데이터
+
+PARAMETERS: p_lot TYPE qals-prueflos. "품질 검사 로트 번호
+
+START-OF-SELECTION.
+
+" 1. 품질 검사 로트 데이터 조회
+SELECT * FROM qals
+  INTO TABLE lt_lots
+  WHERE prueflos = p_lot.
+
+IF sy-subrc = 0.
+  LOOP AT lt_lots INTO DATA(ls_lot).
+    WRITE: / '품질 로트 번호:', ls_lot-prueflos,
+           / '상태:', ls_lot-status,
+           / '자재:', ls_lot-matnr.
+
+    " 2. 검사 결과 데이터 조회
+    SELECT * FROM qamr
+      INTO TABLE lt_results
+      WHERE prueflos = ls_lot-prueflos.
+
+    LOOP AT lt_results INTO DATA(ls_result).
+      WRITE: / '--> 검사 항목:', ls_result-merknr,
+             / '--> 결과:', ls_result-result,
+             / '--> 상태:', ls_result-status.
+    ENDLOOP.
+  ENDLOOP.
+ELSE.
+  WRITE: / '해당 로트 번호의 데이터가 없습니다.'.
+ENDIF.

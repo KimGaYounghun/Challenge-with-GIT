@@ -1,0 +1,19 @@
+REPORT zpp_update_order_status.
+
+TABLES: afko.
+
+PARAMETERS: p_aufnr TYPE aufnr. "생산 오더 번호
+
+START-OF-SELECTION.
+
+" 1. 생산 오더 상태 업데이트
+UPDATE afko
+  SET status = 'CNF' "상태: 완료
+  WHERE aufnr = p_aufnr.
+
+IF sy-subrc = 0.
+  WRITE: / '생산 오더 상태가 완료로 업데이트되었습니다.',
+         / '오더 번호:', p_aufnr.
+ELSE.
+  WRITE: / '상태 업데이트 중 오류가 발생했습니다.'.
+ENDIF.

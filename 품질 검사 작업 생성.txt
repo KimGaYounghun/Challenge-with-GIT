@@ -1,0 +1,26 @@
+REPORT zqm_create_inspection_lot.
+
+TABLES: qals.
+
+DATA: ls_qals TYPE qals.
+
+PARAMETERS: p_matnr TYPE matnr, "자재 번호
+            p_werks TYPE werks_d, "플랜트 번호
+            p_qty TYPE menge DEFAULT '100'. "검사 수량
+
+START-OF-SELECTION.
+
+" 1. 품질 검사 로트 생성
+ls_qals-matnr = p_matnr.
+ls_qals-werks = p_werks.
+ls_qals-prfgmng = p_qty.
+ls_qals-status = 'NEW'. "상태: 신규
+
+INSERT qals FROM ls_qals.
+
+IF sy-subrc = 0.
+  WRITE: / '품질 검사 로트가 성공적으로 생성되었습니다.',
+         / '로트 번호:', ls_qals-prueflos.
+ELSE.
+  WRITE: / '로트 생성 중 오류가 발생했습니다.'.
+ENDIF.
