@@ -1,0 +1,52 @@
+TABLES : scarr.
+* Selection Screen 필드 선언
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+  SELECT-OPTIONS: carrid   FOR scarr-carrid,   " 항공사 코드
+                  carrname FOR scarr-carrname, " 항공사 이름
+                  currcode FOR scarr-currcode, " 통화 코드
+                  url      FOR scarr-url.      " 웹사이트 URL
+SELECTION-SCREEN END OF BLOCK b1.
+
+PARAMETERS: listw TYPE i DEFAULT 250,          " 출력 리스트 폭
+            maxhit TYPE i DEFAULT 200.         " 최대 조회 수
+
+
+* 내부 테이블 및 구조 선언
+DATA: lt_scarr TYPE TABLE OF scarr,
+      lv_lines TYPE i.
+
+START-OF-SELECTION.
+  " SCARR 데이터 선택
+  SELECT * FROM scarr
+    INTO TABLE lt_scarr
+    WHERE carrid   IN carrid
+      AND carrname IN carrname
+      AND currcode IN currcode
+      AND url      IN url.
+
+  " 최대 행 수 제한
+  DESCRIBE TABLE lt_scarr LINES lv_lines.
+  IF lv_lines > maxhit.
+    DELETE lt_scarr INDEX maxhit + 1.
+  ENDIF.
+
+  " 데이터 출력
+  IF lt_scarr IS NOT INITIAL.
+    " 헤더 출력
+    WRITE: / '조회된 데이터:'.
+    WRITE: / sy-uline(80).
+    WRITE: / '항공사 ID', 15 '항공사 이름', 40 '통화', 50 '웹사이트 URL'.
+    WRITE: / sy-uline(80).
+
+    " 데이터 출력
+    LOOP AT lt_scarr INTO DATA(ls_scarr).
+      WRITE: / ls_scarr-carrid,
+             15 ls_scarr-carrname,
+             40 ls_scarr-currcode,
+             50 ls_scarr-url.
+    ENDLOOP.
+
+    WRITE: / sy-uline(80).
+  ELSE.
+    WRITE: / '조회된 데이터가 없습니다.'.
+  ENDIF.
