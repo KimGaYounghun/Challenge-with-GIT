@@ -1,0 +1,56 @@
+DATA: lv_i TYPE i,
+      lv_j TYPE i,
+      lv_result TYPE i.
+
+DO 9 TIMES.
+  lv_i = sy-index.
+WRITE:/ .
+
+  DO 9 TIMES.
+    lv_j = sy-index.
+    lv_result = lv_i * lv_j.
+    WRITE: lv_result.
+    "/ lv_i, '*', lv_j, '=',
+    "/ lv_i &&'*'&& lv_j &&'=' && lv_result.
+    "lv_i &&'*'&& lv_j &&'=' && lv_result.
+  ENDDO.
+ENDDO.
+**********************************************************************
+DATA: gv_n1 TYPE i,
+      gv_n2 TYPE i,
+      gv_re TYPE i.
+WRITE:/ '구구단'.
+gv_n1 = 1.
+DO.
+  WRITE:/ gv_n1, '단'.
+  gv_n2 = 1.
+
+  DO.
+    gv_re = gv_n1 * gv_n2.
+    WRITE:/ gv_n1, '곱하기', gv_n2, '=', gv_re.
+    gv_n2 = gv_n2 + 1.
+    IF gv_n2 GT 9.
+      EXIT.
+    ENDIF.
+  ENDDO.
+  WRITE:/.
+  gv_n1 = gv_n1 + 1.
+
+  IF gv_n1 GT 9.
+    EXIT.
+  ENDIF.
+ENDDO.
+**********************************************************************
+WHILE gv_n1 LT 10.
+  WRITE:/ gv_n1, '단'.
+  gv_n2 = 1.
+
+  WHILE gv_n2 LT 10.
+    gv_re = gv_n1 * gv_n2.
+    WRITE:/ gv_n1, '*', gv_n2, '=', gv_re.
+    gv_n2 = gv_n2 + 1.
+  ENDWHILE.
+
+  gv_n1 = gv_n1 + 1.
+ENDWHILE.
+**********************************************************************
