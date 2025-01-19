@@ -1,0 +1,1464 @@
+아래는 주어진 코드를 기반으로 추가적인 주석을 포함하여 모든 라인을 설명한 코드입니다. 주석을 통해 각 코드가 수행하는 역할, 목적, 그리고 의미를 명확히 하였습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05001
+*&---------------------------------------------------------------------*
+*& 프로그램의 이름 및 정보를 나타내는 부분입니다.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05001.
+
+**********************************************************************
+* Local type - ABAP Dictionary (Data element)
+*--------------------------------------------------------------------*
+* Declartion command : TYPES
+* 로컬 타입 선언 (데이터 엘리먼트를 활용하거나 직접 정의)
+**********************************************************************
+TYPES : tv_char3 TYPE c LENGTH 3,       " 길이 3의 CHAR 타입
+        tv_dec3  TYPE p LENGTH 5 DECIMALS 3, " 소수점 3자리, 5자리 정밀도
+        tv_int4  TYPE i,               " 정수형 데이터 타입
+        tv_date  TYPE d.               " 날짜 형식 (YYYYMMDD)
+
+**********************************************************************
+* Declartion of variable
+*--------------------------------------------------------------------*
+* Using ABAP Incomplete type
+* 불완전한 데이터 타입을 활용한 변수 선언
+**********************************************************************
+DATA : gv_char3    TYPE tv_char3,        " 로컬 타입 참조 (CHAR 3)
+       gv_char2    TYPE c LENGTH 2,      " 길이 2의 CHAR
+       gv_var1(2)  TYPE c,               " 길이 2, 괄호로 설정
+       gv_var2     TYPE c,               " 기본 길이 1의 CHAR
+       gv_var3,                          " 타입 지정하지 않으면 CHAR 1로 기본값 설정
+       gv_var4(10),                      " 길이 10의 CHAR
+       gv_carrid   TYPE s_carr_id,       " 글로벌 타입 참조 (SCARR 테이블 필드)
+       gv_bukrs    TYPE bukrs.           " 회사 코드 필드 (BKP 테이블)
+
+DATA : gv_pvar1    TYPE p LENGTH 5 DECIMALS 2,  " 길이 5, 소수점 2자리 PACKED NUMBER
+       gv_pvar2(5) TYPE p DECIMALS 2,          " PACKED NUMBER, 길이 설정
+       gv_num1     TYPE n LENGTH 5,            " 길이 5의 숫자형 변수
+       gv_num2(5)  TYPE n,                     " 숫자형, 길이 설정
+       gv_num3     LIKE gv_num1.               " gv_num1 변수의 타입 참조
+
+**********************************************************************
+* Using complete type
+*--------------------------------------------------------------------*
+DATA : gv_date1 TYPE d,                        " 날짜 변수
+       gv_date2 TYPE tv_date,                  " 로컬 타입 참조
+       gv_budat TYPE budat,                    " 글로벌 타입 참조
+       gv_date3 LIKE gv_date1,                 " 선언된 변수 타입 참조
+       gv_time  TYPE t,                        " 시간 타입 (HHMMSS)
+       gv_int4  TYPE i,                        " 정수형 타입
+       gv_float TYPE f,                        " 부동소수점 타입
+       gv_str   TYPE string.                   " 가변 길이 문자열
+
+**********************************************************************
+* Reference to ABAP Dictionary - Global type ( Table or Structure field )
+* 글로벌 타입(테이블 또는 구조체 필드)을 참조하여 변수 선언
+**********************************************************************
+DATA : gv_carrid2  TYPE spfli-carrid,           " 항공사 코드
+       gv_country  TYPE spfli-countryfr,        " 출발 국가
+       gv_cityfrom TYPE spfli-cityfrom.         " 출발 도시
+
+DATA : gv_bukrs2 TYPE bkpf-bukrs,               " 회사 코드
+       gv_belnr  TYPE bkpf-belnr,              " 문서 번호
+       gv_gjahr  TYPE bkpf-gjahr.              " 회계 연도
+
+DATA : gv_augbl TYPE bseg-augbl,                " 전표 번호
+       gv_koart TYPE bseg-koart,               " 계정 유형
+       gv_zumsk TYPE bseg-zumsk.               " 결제 조건
+
+DATA : gv_uname TYPE sy-uname,                  " 사용자 ID
+       gv_langu TYPE sy-langu,                 " 언어 코드
+       gv_datum TYPE sy-datum,                 " 현재 날짜
+       gv_uzeit TYPE sy-uzeit,                 " 현재 시간
+       gv_tcode TYPE sy-tcode,                 " 현재 트랜잭션 코드
+       gv_repid TYPE sy-repid,                 " 현재 프로그램 이름
+       gv_index TYPE sy-index,                 " DO/WHILE 루프 인덱스
+       gv_subrc TYPE sy-subrc,                 " 명령문 성공 여부 반환 값
+       gv_tabix TYPE sy-tabix,                 " LOOP 인덱스
+       gv_dbcnt TYPE sy-dbcnt,                 " SQL 작업 결과 행 수
+       gv_dynnr TYPE sy-dynnr.                 " 현재 화면 번호
+
+**********************************************************************
+* Internal table
+* 내부 테이블과 워크 영역(스트럭처) 선언
+**********************************************************************
+DATA : gt_scarr   TYPE TABLE OF scarr,          " SCARR 테이블 참조
+       gt_spfli   TYPE TABLE OF spfli,          " SPFLI 테이블 참조
+       gt_sbook   TYPE TABLE OF sbook,          " SBOOk 테이블 참조
+       gt_sflight TYPE TABLE OF sflight.        " SFLIGHT 테이블 참조
+
+DATA : gs_scarr   TYPE scarr,                   " SCARR 구조체 워크 영역
+       gs_spfli   TYPE spfli,                   " SPFLI 구조체 워크 영역
+       gs_sbook   TYPE sbook,                   " SBOOK 구조체 워크 영역
+       gs_sflight TYPE sflight.                 " SFLIGHT 구조체 워크 영역
+
+DATA : gt_comp TYPE TABLE OF zscl1_comp_05,     " 커스텀 구조체 참조 테이블
+       gs_comp TYPE zscl1_comp_05.              " 커스텀 구조체 워크 영역
+
+DATA : gt_board TYPE TABLE OF ztcl1board05,     " 커스텀 테이블 참조
+       gt_tax   TYPE TABLE OF ztc1_tax_05.      " 커스텀 테이블 참조
+
+DATA : gs_board TYPE ztcl1board05,              " 커스텀 구조체 워크 영역
+       gs_tax   TYPE ztc1_tax_05.               " 커스텀 구조체 워크 영역
+
+**********************************************************************
+* Calculation
+* 계산 관련 변수와 연산 작업
+**********************************************************************
+DATA : gv_string  TYPE string VALUE 'SYNC6',    " 초기값 할당 문자열
+       gv_len     TYPE i,                       " 문자열 길이 저장 변수
+       gv_result  TYPE i,                       " 결과 변수
+       gv_number1 TYPE i,                       " 첫 번째 숫자
+       gv_number2 TYPE i.                       " 두 번째 숫자
+
+*-- Assign data
+gv_number1 = 7.                                 " 숫자 7 할당
+gv_number2 = 5.                                 " 숫자 5 할당
+CLEAR gv_result.                                " 결과 변수 초기화
+
+*-- 기본 연산
+gv_result = gv_number1 + gv_number2.            " 덧셈
+gv_result = gv_number1 - gv_number2.            " 뺄셈
+gv_result = gv_number1 * gv_number2.            " 곱셈
+gv_result = gv_number1 / gv_number2.            " 나눗셈
+
+gv_result = gv_result + 1.                      " 결과에 1 더하기
+gv_result = 2 ** 3.                             " 2의 3제곱
+gv_result = ( gv_number1 * gv_number2 ) ** 2.   " 곱한 값의 제곱
+
+gv_result = gv_number2 DIV gv_number1.          " 정수 나눗셈
+gv_result = gv_number2 MOD gv_number1.          " 나머지 계산
+
+gv_len = strlen( gv_string ).                   " 문자열 길이 계산
+
+WRITE gv_len.                                   " 길이 출력
+```
+
+위 코드는 모든 부분에 상세한 주석을 추가한 형태입니다. 추가적인 질문이 있으면 말씀해주세요! 😊
+
+아래는 주어진 ABAP 코드에 대해 **모든 라인에 상세 주석을 추가**하여 설명한 코드입니다. 코드의 흐름과 각 데이터 선언의 의도를 명확히 알 수 있도록 작성했습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05002
+*&---------------------------------------------------------------------*
+*& 프로그램 설명: 다양한 내부 테이블과 구조체 정의를 포함한 예제 프로그램
+*&---------------------------------------------------------------------*
+REPORT zcl1r05002.
+
+**********************************************************************
+* TYPES : Local type 스트럭쳐 정의
+* 사용자 정의 타입(ts_airline)을 스트럭처 형식으로 정의
+**********************************************************************
+TYPES : BEGIN OF ts_airline,
+          carrid    TYPE scarr-carrid,    " 항공사 ID
+          carrname  TYPE scarr-carrname,  " 항공사명
+          countryfr TYPE spfli-countryfr, " 출발 국가
+          countryto TYPE spfli-countryto, " 도착 국가
+        END OF ts_airline.                " 스트럭처 끝
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블 및 워크 에리어 선언
+**********************************************************************
+*-- Using local type structure
+DATA : gt_airline TYPE TABLE OF ts_airline,      " ts_airline 구조를 사용하는 내부 테이블
+       gs_airline TYPE ts_airline.              " ts_airline 구조를 참조한 워크 에리어
+
+DATA : gt_air1 LIKE gt_airline,                 " gt_airline 내부 테이블을 참조
+       gt_air2 LIKE TABLE OF gs_airline.        " gs_airline과 동일한 구조의 내부 테이블 생성
+
+*-- Using global type
+DATA : gt_scarr TYPE TABLE OF scarr,            " SCARR 테이블 전체 구조를 가지는 내부 테이블
+       gt_bkpf  TYPE TABLE OF bkpf,             " BKPF 테이블 전체 구조를 가지는 내부 테이블
+       gs_scarr TYPE scarr,                     " SCARR 구조를 참조한 워크 에리어
+       gs_bkpf  TYPE bkpf.                      " BKPF 구조를 참조한 워크 에리어
+
+*-- Declartion of Internal table and Work area
+DATA : BEGIN OF gs_flight,                      " 수동으로 정의된 구조체(워크 에리어)
+         carrid    TYPE scarr-carrid,           " 항공사 ID
+         connid    TYPE spfli-connid,           " 연결 ID
+         countryfr TYPE spfli-countryfr,        " 출발 국가
+         cityfrom  TYPE spfli-cityfrom,         " 출발 도시
+         countryto TYPE spfli-countryto,        " 도착 국가
+         cityto    TYPE spfli-cityto,           " 도착 도시
+         carrname  TYPE scarr-carrname,         " 항공사명
+       END OF gs_flight,
+       gt_flight LIKE TABLE OF gs_flight.       " gs_flight 구조를 기반으로 한 내부 테이블
+
+* 데이터로 선언된 항목은 LIKE를 사용, TYPES로 선언된 항목은 TYPE 사용
+
+DATA : BEGIN OF gs_board_tax,                   " 게시판 및 세금 정보를 포함한 구조체
+         seqno  TYPE ztcl1board05-seqno,       " 순번
+         author TYPE ztcl1board05-author,      " 작성자
+         comp   TYPE ztcl1board05-comp,        " 회사 코드
+         bukrs  TYPE ztc1_tax_05-bukrs,        " 회사 코드(BUKRS)
+         gjahr  TYPE ztc1_tax_05-gjahr,        " 회계 연도
+         mwskz  TYPE ztc1_tax_05-mwskz,        " 세금 코드
+       END OF gs_board_tax,
+       gt_board_tax LIKE TABLE OF gs_board_tax. " gs_board_tax 구조를 참조한 내부 테이블
+
+* 추가적으로 gsber text table 필드도 마지막에 포함
+DATA : BEGIN OF gs_bkpf_bseg,                   " BKPF 및 BSEG 데이터를 결합한 구조체
+         bukrs TYPE bkpf-bukrs,                " 회사 코드
+         belnr TYPE bkpf-belnr,                " 문서 번호
+         gjahr TYPE bkpf-gjahr,                " 회계 연도
+         gsber TYPE bseg-gsber,                " 사업 영역
+         gtext TYPE tgsbt-gtext,               " 사업 영역 설명
+         mwskz TYPE bseg-mwskz,                " 세금 코드
+         dmbtr TYPE bseg-dmbtr,                " 금액
+         pswsl TYPE bseg-pswsl,                " 통화
+       END OF gs_bkpf_bseg,
+       gt_bkpf_bseg LIKE TABLE OF gs_bkpf_bseg." 내부 테이블
+
+* SCARR 테이블의 모든 필드를 포함하고 추가 필드 정의
+DATA : BEGIN OF gs_scarr1,
+         carrid   TYPE scarr-carrid,           " 항공사 ID
+         carrname TYPE scarr-carrname,         " 항공사명
+         currcode TYPE scarr-currcode,         " 통화 코드
+         url      TYPE scarr-url,              " 항공사 URL
+         val1(5)  TYPE p DECIMALS 3,           " 소수점 3자리의 Packed Number
+       END OF gs_scarr1,
+       gt_scarr1 LIKE TABLE OF gs_scarr1.      " 내부 테이블
+
+**********************************************************************
+* 특정 테이블의 모든 필드를 포함하고 추가 필드를 가지는 구조체
+**********************************************************************
+DATA : BEGIN OF gs_air3.
+         INCLUDE STRUCTURE scarr.              " SCARR 테이블 구조 포함
+         INCLUDE STRUCTURE zscl1_comp_05.      " 커스텀 구조체 포함
+DATA :   val1(5) TYPE p DECIMALS 3,            " Packed Number 필드 추가
+         va12(3),                              " 길이 3의 추가 필드
+       END OF gs_air3,
+       gt_air3 LIKE TABLE OF gs_air3.          " 내부 테이블 선언
+
+* MAKT 구조에 추가 필드 포함
+TYPES : BEGIN OF ts_makt.
+          INCLUDE STRUCTURE makt.              " MAKT 테이블 구조 포함
+TYPES :   matkl TYPE mara-matkl,               " 자재 그룹
+          mtart TYPE mara-mtart,               " 자재 유형
+          mblnr TYPE mseg-mblnr,               " 전표 번호
+          bwart TYPE mseg-bwart,               " 이동 유형
+        END OF ts_makt.
+
+DATA : gt_mara TYPE TABLE OF ts_makt,          " ts_makt 구조를 사용하는 내부 테이블
+       gs_mara TYPE ts_makt.                   " 워크 에리어
+
+* 기타 테이블과 구조체 선언
+DATA : gt_bsis TYPE TABLE OF bsis,             " BSIS 테이블 참조
+       gs_bsis TYPE bsis,
+       gt_bsid TYPE TABLE OF bsid,
+       gs_bsid TYPE bsid,
+       gt_bsik TYPE TABLE OF bsik,
+       gs_bsik TYPE bsik.
+
+DATA : BEGIN OF gs_cskt.
+         INCLUDE STRUCTURE cskt.               " CSKT 구조 포함
+DATA :   pkzkp TYPE csks-pkzkp,                " 원가 계획 코드
+         kosar TYPE csks-kosar,                " 원가 센터
+         txjcd TYPE csks-txjcd,                " 세금 코드
+       END OF gs_cskt.
+
+DATA : gt_cskt LIKE TABLE OF gs_cskt.          " 내부 테이블 선언
+
+DATA : BEGIN OF gs_test1,
+         stlan     TYPE mast-stlan,            " 구조 레벨
+         stlal     TYPE mast-stlal,            " 구조 위치
+         matnr     TYPE mast-matnr,            " 자재 번호
+         maktx     TYPE makt-maktx,            " 자재 설명
+         mnglg     TYPE stpol-mnglg,           " 양
+         meins     TYPE stpol-meins,           " 단위
+         level(10),                            " 레벨
+       END OF gs_test1,
+       gt_test1 LIKE TABLE OF gs_test1.        " 내부 테이블
+
+DATA : BEGIN OF gs_test2,
+         mtart TYPE t134-mtart,                " 자재 유형
+         mtref TYPE t134-mtref,                " 참조 자재
+         mbref TYPE t134-mbref,                " 참조 BOM
+         pstat TYPE t134-pstat,                " 상태
+         vmtpo TYPE t134-vmtpo,                " 판매 유형
+         kzgrp TYPE t134-kzgrp,                " 그룹
+         kkref TYPE t134-kkref,                " 참조 코드
+         krftx TYPE t025l-krftx,               " 설명
+       END OF gs_test2,
+       gt_test2 LIKE TABLE OF gs_test2.        " 내부 테이블
+
+DATA : BEGIN OF gs_scarr_sflight05.
+         INCLUDE STRUCTURE scarr.              " SCARR 구조 포함
+DATA :   connid    TYPE sflight-connid,        " 연결 ID
+         fldate    TYPE sflight-fldate,        " 비행 날짜
+         price     TYPE sflight-price,         " 가격
+         currency  TYPE sflight-currency,      " 통화
+         planetype TYPE sflight-planetype.     " 항공기 타입
+         INCLUDE STRUCTURE zscl1_comp_05.      " 커스텀 구조 포함
+DATA : END OF gs_scarr_sflight05,
+gt_scarr_sflight05 LIKE TABLE OF gs_scarr_sflight05. " 내부 테이블
+```
+
+위 코드에 주석을 추가하여 각 선언과 정의를 이해하기 쉽게 설명했습니다. 추가적인 질문이 있으면 알려주세요! 😊
+
+아래는 주어진 코드를 **모든 라인에 상세 주석**을 추가한 버전입니다. 코드의 동작을 명확히 설명하고, 필요한 부분마다 데이터 흐름과 사용 목적을 주석으로 기록했습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05003
+*&---------------------------------------------------------------------*
+*& 이 프로그램은 내부 테이블 및 워크 에리어를 생성하고 데이터 조작
+*& (삽입, 수정, 삭제, 검색 등)을 다룹니다.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05003.
+
+**********************************************************************
+* Internal table and Work area
+**********************************************************************
+* 내부 테이블 및 워크 에리어 선언
+DATA : BEGIN OF gs_data, " 데이터 구조 정의 (워크 에리어)
+         carrid   TYPE scarr-carrid,    " 항공사 코드 (Carrier ID)
+         connid   TYPE spfli-connid,    " 연결 항공편 번호 (Connection ID)
+         fldate   TYPE sflight-fldate,  " 운항 일자 (Flight Date)
+         carrname TYPE scarr-carrname,  " 항공사 이름 (Carrier Name)
+         cityfrom TYPE spfli-cityfrom,  " 출발 도시 (City From)
+         cityto   TYPE spfli-cityto,    " 도착 도시 (City To)
+         size     TYPE i,               " 크기 또는 길이 (Size, 정수형)
+       END OF gs_data,
+       gt_data LIKE TABLE OF gs_data.   " gs_data 구조를 기반으로 한 내부 테이블
+
+DATA : gt_data2 LIKE TABLE OF gs_data,  " gt_data와 동일한 구조를 가지는 내부 테이블
+       gt_data3 LIKE gt_data,           " gt_data와 동일한 내부 테이블 선언
+       gs_data3 LIKE LINE OF gt_data.   " gt_data의 단일 행(워크 에리어)
+
+* 참고: gs_scarr TYPE LINE OF scarr 같은 선언은 오류 발생. 테이블 타입 필요.
+DATA : gt_info TYPE zlvc_t_info05,      " 테이블 타입 참조
+       gs_info TYPE LINE OF zlvc_t_info05. " zlvc_t_info05의 단일 행(워크 에리어)
+
+**********************************************************************
+* Data access
+**********************************************************************
+* 데이터를 처리하는 작업
+* 1. Work area에 데이터를 할당
+* 2. 데이터를 내부 테이블에 추가하거나 수정
+**********************************************************************
+
+*-- 1. Work area 및 Internal Table 초기화
+CLEAR : gt_data, gs_data. " 내부 테이블(gt_data) 및 워크 에리어(gs_data) 초기화
+
+*-- Work area에 데이터 할당
+gs_data-carrid   = 'LH'.       " 항공사 코드: Lufthansa
+gs_data-connid   = '0400'.     " 연결 항공편 번호
+gs_data-fldate   = sy-datum.   " 운항 일자: 시스템 날짜
+gs_data-carrname = 'Luft Hanza'. " 항공사 이름
+gs_data-cityfrom = 'Seoul'.    " 출발 도시
+gs_data-cityto   = 'Busan'.    " 도착 도시
+
+*-- 내부 테이블에 데이터 추가 (APPEND)
+APPEND gs_data TO gt_data.     " gs_data를 gt_data 내부 테이블에 추가
+
+*-- 다른 데이터 할당 및 추가
+CLEAR gs_data.
+gs_data-carrid   = 'AA'.       " 항공사 코드: American Airlines
+gs_data-connid   = '0100'.     " 연결 항공편 번호
+gs_data-fldate   = '20250105'. " 고정된 운항 일자
+gs_data-carrname = 'American Airline'. " 항공사 이름
+
+*-- INSERT를 사용하여 내부 테이블에 데이터 삽입
+INSERT gs_data INTO TABLE gt_data. " gs_data를 gt_data 내부 테이블에 삽입
+
+*-- 또 다른 데이터 삽입
+CLEAR gs_data.
+gs_data-carrid   = 'AA'.       " 항공사 코드
+gs_data-connid   = '0200'.     " 연결 항공편 번호
+gs_data-fldate   = '20250105'. " 운항 일자
+gs_data-carrname = 'American Airline'. " 항공사 이름
+
+INSERT gs_data INTO TABLE gt_data. " gs_data를 내부 테이블에 삽입
+
+*-- INDEX를 사용한 삽입 (특정 위치)
+CLEAR : gs_data.
+gs_data-carrid   = 'CA'.       " 항공사 코드: Canada Airlines
+gs_data-connid   = '0700'.     " 연결 항공편 번호
+gs_data-fldate   = '20250101'. " 운항 일자
+gs_data-carrname = 'Canada airline'. " 항공사 이름
+
+INSERT gs_data INTO gt_data INDEX 1. " gt_data의 첫 번째 위치에 삽입
+
+*-- CASE 1: 키를 사용하여 특정 데이터 검색
+CLEAR gs_data.
+READ TABLE gt_data INTO gs_data WITH KEY carrid = 'AA'
+                                         connid = '0200'.
+" READ TABLE: 키 조건(carrid, connid)에 맞는 데이터를 gt_data에서 검색하여 gs_data에 저장.
+
+*-- CASE 2: 인덱스를 사용하여 데이터 검색
+CLEAR gs_data.
+READ TABLE gt_data INTO gs_data INDEX 2. " 두 번째 행의 데이터를 검색
+
+*-- MODIFY를 사용한 데이터 수정
+CLEAR gs_data.
+gs_data-carrid   = 'CA'.       " 항공사 코드
+gs_data-connid   = '0700'.     " 연결 항공편 번호
+gs_data-fldate   = '20250105'. " 운항 일자
+gs_data-carrname = 'Canada airline'. " 항공사 이름
+gs_data-size     = 17.         " 수정할 데이터 크기
+
+*-- 특정 필드(size)를 수정 (TRANSPORTING 옵션 사용)
+MODIFY gt_data FROM gs_data INDEX 1 TRANSPORTING size. 
+" MODIFY: 내부 테이블의 특정 필드(size)만 변경
+
+*-- DELETE 조건을 사용하여 특정 데이터 삭제
+* DELETE gt_data WHERE carrid EQ 'AA'   " 조건에 따라 데이터 삭제
+*                 AND connid EQ '0100'.
+
+*-- LOOP를 사용한 내부 테이블 데이터 출력
+LOOP AT gt_data INTO gs_data.
+
+  *-- 데이터 수정 및 반영
+  gs_data-size = gs_data-size + 1. " size 값을 1 증가
+  MODIFY gt_data FROM gs_data INDEX sy-tabix TRANSPORTING size. 
+  " sy-tabix: 현재 루프의 인덱스
+
+  *-- 데이터 출력
+  WRITE :/ gs_data-carrid, gs_data-connid, gs_data-carrname.
+
+ENDLOOP.
+
+*-- 데이터 구분선 출력
+WRITE sy-uline. " 화면에 구분선 출력
+
+*-- 특정 조건에 따라 데이터 출력
+LOOP AT gt_data INTO gs_data WHERE carrid EQ 'AA'.
+  WRITE :/ gs_data-carrid, gs_data-connid, gs_data-carrname.
+ENDLOOP.
+
+*-- 특정 범위 데이터를 다른 테이블로 복사
+INSERT LINES OF gt_data FROM 2 TO 3 INTO TABLE gt_data2. " 2~3행 데이터를 gt_data2에 삽입
+INSERT LINES OF gt_data FROM 2 TO 3 INTO gt_data2 INDEX 2. " 2~3행을 gt_data2의 두 번째 위치에 삽입
+APPEND LINES OF gt_data FROM 2 TO 3 TO gt_data2. " 2~3행을 gt_data2에 추가
+
+BREAK-POINT. " 디버깅 중단점 설정
+
+*-- 내부 테이블 데이터를 완전히 삭제
+* DELETE gt_data. " 데이터 삭제
+* CLEAR gt_data. " 데이터 초기화
+```
+
+---
+
+### **주요 주석 요약**
+1. **데이터 구조 및 내부 테이블 선언**:
+   - 각 필드가 어떤 데이터를 나타내는지 설명.
+   - 구조체와 내부 테이블 간의 관계.
+
+2. **데이터 삽입 및 수정**:
+   - APPEND, INSERT, MODIFY, DELETE 등을 사용하는 방법.
+   - TRANSPORTING 옵션으로 특정 필드만 수정.
+
+3. **데이터 검색**:
+   - READ TABLE을 사용한 키 또는 인덱스 기반 데이터 검색.
+
+4. **데이터 출력**:
+   - LOOP를 활용한 데이터 수정 및 출력.
+
+5. **디버깅 및 주의 사항**:
+   - BREAK-POINT와 sy-tabix의 역할 강조.
+
+추가로 궁금한 점이 있거나 다른 코드에 대해 설명이 필요하면 언제든 말씀해주세요! 😊
+
+아래는 주어진 코드에 주석을 추가하여 각 코드 라인의 목적과 동작을 상세히 설명한 버전입니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05004
+*&---------------------------------------------------------------------*
+*& 프로그램 설명: BKPF와 BSEG 데이터를 처리하는 내부 테이블 작업
+*&---------------------------------------------------------------------*
+REPORT zcl1r05004.
+
+**********************************************************************
+* Structure 정의 (TYPES)
+**********************************************************************
+TYPES : BEGIN OF ts_bkpf_bseg,                    " BKPF와 BSEG 필드를 결합한 스트럭처
+          bukrs TYPE bkpf-bukrs,                 " 회사 코드 (Company Code)
+          belnr TYPE bkpf-belnr,                 " 문서 번호 (Document Number)
+          gjahr TYPE bkpf-gjahr,                 " 회계 연도 (Fiscal Year)
+          buzei TYPE bseg-buzei,                 " 문서 항목 번호 (Line Item Number)
+          budat TYPE bkpf-budat,                 " 문서 날짜 (Document Date)
+          bktxt TYPE bkpf-bktxt,                 " 문서 헤더 텍스트 (Header Text)
+          wrbtr TYPE bseg-wrbtr,                 " 금액 (Amount in Document Currency)
+          waers TYPE bkpf-waers,                 " 통화 (Currency Key)
+          sgtxt TYPE bseg-sgtxt,                 " 항목 텍스트 (Item Text)
+        END OF ts_bkpf_bseg.                     " 스트럭처 정의 끝
+
+**********************************************************************
+* 데이터 선언
+**********************************************************************
+DATA : gs_bkpf_bseg TYPE ts_bkpf_bseg,           " Work Area
+       gt_bkpf_bseg TYPE TABLE OF ts_bkpf_bseg.  " Internal Table
+
+**********************************************************************
+* 데이터 초기화
+**********************************************************************
+CLEAR : gt_bkpf_bseg, gs_bkpf_bseg.              " 내부 테이블과 워크 에리어 초기화
+
+**********************************************************************
+* Work Area에 데이터 삽입 및 Internal Table로 추가
+**********************************************************************
+* 첫 번째 데이터 추가
+gs_bkpf_bseg-bukrs = '1000'.                     " 회사 코드
+gs_bkpf_bseg-belnr = '0010000007'.               " 문서 번호
+gs_bkpf_bseg-gjahr = '2025'.                     " 회계 연도
+gs_bkpf_bseg-buzei = '0002'.                     " 문서 항목 번호
+gs_bkpf_bseg-budat = sy-datum.                   " 시스템 날짜를 문서 날짜로 설정
+gs_bkpf_bseg-bktxt = 'Document header'.          " 문서 헤더 텍스트
+gs_bkpf_bseg-wrbtr = 15000.                      " 문서 통화 기준 금액
+gs_bkpf_bseg-waers = 'KRW'.                      " 통화 코드 (KRW: 한국 원화)
+gs_bkpf_bseg-sgtxt = 'Line item'.                " 항목 텍스트
+
+APPEND gs_bkpf_bseg TO gt_bkpf_bseg.             " Work Area의 데이터를 Internal Table에 추가
+
+CLEAR gs_bkpf_bseg.                              " Work Area 초기화
+
+* 두 번째 데이터 추가 (INDEX로 추가)
+gs_bkpf_bseg-bukrs = '1000'.                     " 회사 코드
+gs_bkpf_bseg-belnr = '0010000006'.               " 문서 번호
+gs_bkpf_bseg-gjahr = '2024'.                     " 회계 연도
+gs_bkpf_bseg-buzei = '0001'.                     " 문서 항목 번호
+gs_bkpf_bseg-budat = sy-datum.                   " 시스템 날짜
+gs_bkpf_bseg-bktxt = 'Document insert header'.   " 문서 헤더 텍스트
+gs_bkpf_bseg-wrbtr = 7000.                       " 금액
+gs_bkpf_bseg-waers = 'KRW'.                      " 통화 코드
+gs_bkpf_bseg-sgtxt = 'Line item insert'.         " 항목 텍스트
+
+INSERT gs_bkpf_bseg INTO gt_bkpf_bseg INDEX 1.   " Internal Table의 첫 번째 위치에 데이터 삽입
+
+**********************************************************************
+* READ TABLE: 데이터 읽기
+**********************************************************************
+CLEAR gs_bkpf_bseg.                              " Work Area 초기화
+READ TABLE gt_bkpf_bseg INTO gs_bkpf_bseg INDEX 2.
+" Internal Table의 두 번째 행 데이터를 Work Area에 읽어옴
+
+**********************************************************************
+* MODIFY: 데이터 수정
+**********************************************************************
+CLEAR gs_bkpf_bseg.                              " Work Area 초기화
+
+gs_bkpf_bseg-bktxt = 'Document header updated'.  " 문서 헤더 텍스트 업데이트
+gs_bkpf_bseg-wrbtr = 12000.                      " 금액 업데이트
+gs_bkpf_bseg-waers = 'USD'.                      " 통화 코드 업데이트 (USD: 미국 달러)
+gs_bkpf_bseg-sgtxt = 'Line item updated'.        " 항목 텍스트 업데이트
+
+MODIFY gt_bkpf_bseg FROM gs_bkpf_bseg INDEX 2    " Internal Table의 두 번째 행 수정
+       TRANSPORTING bktxt wrbtr waers sgtxt.     " 특정 필드만 수정
+
+**********************************************************************
+* Internal Table Display
+**********************************************************************
+cl_demo_output=>display( gt_bkpf_bseg ).         " Internal Table 출력
+```
+
+---
+
+### **코드 설명**
+
+#### **1. TYPES**
+- `ts_bkpf_bseg` 스트럭처는 `BKPF`와 `BSEG` 테이블의 일부 필드를 조합하여 생성.
+- `bukrs`(회사 코드), `belnr`(문서 번호), `gjahr`(회계 연도) 등 회계와 관련된 정보를 포함.
+
+#### **2. 데이터 선언**
+- **`gs_bkpf_bseg`**: Work Area로서 단일 행 데이터를 처리.
+- **`gt_bkpf_bseg`**: Internal Table로 다수의 데이터를 저장.
+
+#### **3. Work Area 초기화**
+- `CLEAR`로 Work Area와 Internal Table을 초기화.
+
+#### **4. 데이터 삽입**
+- `APPEND`: Internal Table에 데이터 추가.
+- `INSERT`: 특정 위치에 데이터 삽입 (INDEX 사용).
+
+#### **5. 데이터 읽기**
+- `READ TABLE`: Internal Table의 데이터를 Work Area로 읽어옴.
+  - **INDEX**: 특정 행(여기서는 두 번째 행)을 읽음.
+
+#### **6. 데이터 수정**
+- `MODIFY`: Internal Table에서 특정 데이터를 수정.
+  - **TRANSPORTING**: 특정 필드만 수정하여 불필요한 데이터 변경을 방지.
+
+#### **7. 데이터 출력**
+- **`cl_demo_output=>display`**: SAP 표준 클래스에서 제공하는 메서드로 Internal Table 데이터를 화면에 출력.
+
+---
+
+### **실행 흐름**
+1. 두 개의 데이터를 Internal Table(`gt_bkpf_bseg`)에 삽입.
+2. 두 번째 행을 읽어온 뒤, 일부 데이터를 수정.
+3. 최종적으로 `cl_demo_output`을 통해 Internal Table 내용을 출력.
+
+추가로 궁금한 점이 있으면 언제든 말씀해주세요! 😊
+
+아래는 제공된 코드에 대해 **모든 라인에 주석을 추가한 버전**입니다. 각 코드가 수행하는 작업과 데이터를 다루는 방식을 상세히 설명했습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05005
+*&---------------------------------------------------------------------*
+*& 프로그램 설명:
+*& - SFLIGHT, SCARR, T007S 등 다양한 테이블에서 데이터를 SELECT.
+*& - 조건을 사용하여 데이터를 필터링하고 내부 테이블에 저장.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05005.
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블과 워크 에리어 선언
+**********************************************************************
+
+DATA : BEGIN OF gs_flight,                    " SFLIGHT 테이블의 필드를 포함한 구조체
+         connid   TYPE sflight-connid,        " 연결 항공편 번호
+         fldate   TYPE sflight-fldate,        " 운항 일자
+         seatsocc TYPE sflight-seatsocc,      " 예약된 좌석 수
+       END OF gs_flight,
+       gt_flight LIKE TABLE OF gs_flight.     " gs_flight 구조를 기반으로 한 내부 테이블
+
+DATA : BEGIN OF gs_unique,                    " CARRID 및 CONNID를 저장하는 구조체
+         carrid TYPE sflight-carrid,          " 항공사 코드
+         connid TYPE sflight-connid,          " 연결 항공편 번호
+       END OF gs_unique,
+       gt_unique LIKE TABLE OF gs_unique.     " 내부 테이블: CARRID, CONNID 저장
+
+DATA : BEGIN OF gs_airline,                   " SCARR 테이블에서 데이터 가져오기 위한 구조체
+         carrid   TYPE scarr-carrid,          " 항공사 코드
+         carrname TYPE scarr-carrname,        " 항공사 이름
+         currcode TYPE scarr-currcode,        " 통화 코드
+       END OF gs_airline,
+       gt_airline LIKE TABLE OF gs_airline.   " 내부 테이블: 항공사 데이터 저장
+
+DATA : gt_scarr TYPE TABLE OF scarr.          " SCARR 테이블 전체 구조를 저장하는 내부 테이블
+
+**********************************************************************
+* Get data
+* 데이터 조회 및 필터링
+**********************************************************************
+
+*-- SFLIGHT 테이블에서 CONNID, FLDATE, SEATSOCC를 조회
+* 조건: SEATSOCC > 200인 데이터만 조회
+CLEAR : gt_flight, gs_flight.                 " 내부 테이블 및 워크 에리어 초기화
+SELECT connid fldate seatsocc
+  FROM sflight
+  INTO TABLE gt_flight
+  WHERE seatsocc GT 200                       " 예약된 좌석 수가 200보다 큰 데이터만
+  ORDER BY connid DESCENDING seatsocc ASCENDING.
+" ORDER BY: CONNID는 내림차순, SEATSOCC는 오름차순으로 정렬
+
+*-- SCARR 테이블에서 CARRID, CARRNAME, CURRCODE 조회
+* 조건: CURRCODE = 'EUR'
+CLEAR : gt_airline, gs_airline.               " 내부 테이블 및 워크 에리어 초기화
+SELECT carrid carrname currcode
+  FROM scarr
+  INTO TABLE gt_airline
+  WHERE currcode EQ 'EUR'.                    " 통화 코드가 'EUR'(유로)인 데이터만
+
+*-- SFLIGHT 테이블에서 CARRID와 CONNID를 중복 제거하여 조회
+* 조건: SEATSOCC > 200
+CLEAR : gt_unique, gs_unique.                 " 내부 테이블 및 워크 에리어 초기화
+SELECT DISTINCT carrid connid
+  FROM sflight
+  INTO TABLE gt_unique
+  WHERE seatsocc GT 200.                      " 예약된 좌석 수가 200보다 큰 데이터
+
+*-- SCARR 테이블에서 데이터를 SELECT
+SELECT carrid carrname url
+  INTO CORRESPONDING FIELDS OF TABLE gt_scarr
+  FROM scarr.
+" CORRESPONDING FIELDS: SCARR 테이블의 필드와 내부 테이블 필드 자동 매핑
+
+**********************************************************************
+* T007S 테이블에서 세율 데이터를 조회
+**********************************************************************
+DATA gt_mwskz TYPE TABLE OF t007s.            " T007S 테이블 데이터를 저장하는 내부 테이블
+
+CLEAR gt_mwskz.                               " 내부 테이블 초기화
+
+SELECT spras kalsm mwskz text1
+  FROM t007s
+  INTO CORRESPONDING FIELDS OF TABLE gt_mwskz
+  WHERE spras EQ sy-langu                     " 현재 시스템 언어와 동일한 데이터
+    AND kalsm EQ 'TAXKR'.                     " 세율 결정 절차가 'TAXKR'인 데이터
+" CORRESPONDING FIELDS: 테이블 필드와 내부 테이블 필드 매핑
+
+**********************************************************************
+* 특정 조건으로 SCARR 테이블 데이터를 조회
+**********************************************************************
+
+*-- CARRID가 'AA'와 'DL' 사이인 데이터를 조회
+DATA gt_scarr3 TYPE TABLE OF scarr.           " SCARR 데이터를 저장하는 내부 테이블
+
+SELECT carrid carrname currcode url
+  FROM scarr
+  INTO CORRESPONDING FIELDS OF TABLE gt_scarr3
+  WHERE carrid BETWEEN 'AA' AND 'DL'.         " 항공사 코드가 'AA'와 'DL' 사이의 데이터
+
+*-- 특정 항공사 코드(CARRID)에 해당하는 데이터 조회
+SELECT carrid carrname currcode url
+  FROM scarr
+  INTO CORRESPONDING FIELDS OF TABLE gt_scarr3
+  WHERE carrid IN ('AA', 'AB', 'CA', 'LH').   " 지정된 항공사 코드에 해당하는 데이터
+
+**********************************************************************
+* SBOOK 테이블에서 예약 데이터를 조회
+**********************************************************************
+DATA gt_sbook TYPE TABLE OF sbook.            " SBOOK 테이블 데이터를 저장하는 내부 테이블
+
+CLEAR gt_sbook.                               " 내부 테이블 초기화
+
+* 예약일이 2024년 10월 1일부터 2024년 10월 30일 사이인 데이터 조회
+* FORCURAM(금액)이 800 이상인 데이터만 조회
+SELECT carrid connid fldate bookid customid custtype smoker invoice forcuram
+  FROM sbook
+  INTO CORRESPONDING FIELDS OF TABLE gt_sbook
+  WHERE fldate BETWEEN '20241001' AND '20241030' " 날짜 범위 설정
+    AND forcuram GE 800.                      " 금액이 800 이상인 데이터
+
+* 결과를 화면에 출력
+cl_demo_output=>display( gt_sbook ).
+```
+
+---
+
+### **주석 요약**
+
+#### **1. 내부 테이블 및 워크 에리어 정의**
+- `gs_flight`, `gt_flight`: SFLIGHT 데이터를 저장 및 조작.
+- `gs_unique`, `gt_unique`: SFLIGHT에서 CARRID, CONNID를 중복 없이 저장.
+- `gs_airline`, `gt_airline`: SCARR 데이터를 저장.
+
+#### **2. SELECT 문**
+- **기본 SELECT**:
+  - 조건(`WHERE`)과 정렬(`ORDER BY`)을 사용하여 데이터를 필터링.
+- **`DISTINCT`**:
+  - 중복 제거.
+- **`CORRESPONDING FIELDS`**:
+  - 테이블과 내부 테이블의 동일 필드 매핑.
+- **범위 및 목록 조건**:
+  - `BETWEEN`과 `IN` 사용.
+
+#### **3. T007S, SBOOK 등 다양한 테이블 데이터 조회**
+- 조건부 조회(`WHERE` 절)로 특정 데이터를 필터링.
+- 언어 코드, 금액 조건 등 다양한 기준 적용.
+
+#### **4. 결과 출력**
+- `cl_demo_output=>display`: SAP 표준 메서드로 내부 테이블 데이터 출력.
+
+---
+
+### **실행 흐름**
+1. **SFLIGHT**: 좌석 점유율이 200 이상인 항공편 정보를 필터링하고 정렬.
+2. **SCARR**: 통화 코드가 유로인 항공사 정보 또는 특정 항공사 코드를 기준으로 데이터 조회.
+3. **T007S**: 언어와 세율 결정 절차를 기준으로 세율 데이터 조회.
+4. **SBOOK**: 특정 날짜 범위와 금액 조건에 맞는 예약 데이터 조회.
+5. 최종적으로 데이터를 출력.
+
+
+추가로 궁금한 점이 있거나, 다른 코드에 대한 설명이 필요하면 말씀해주세요! 😊
+
+아래는 주어진 코드에 **모든 라인에 상세 주석을 추가한 버전**입니다. 코드를 통해 수행되는 작업과 각 구문에 대한 목적을 이해할 수 있도록 설명을 추가했습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05006
+*&---------------------------------------------------------------------*
+*& 프로그램 설명:
+*& - SPFILI와 SFLIGHT 테이블의 데이터를 조회하고 다양한 SQL 문법을 활용.
+*& - GROUP BY, HAVING, SINGLE SELECT 등의 SQL 구문을 사용하는 예제.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05006.
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블 및 워크 에리어 선언
+**********************************************************************
+DATA : BEGIN OF gs_spfli,                        " SPFLI 테이블 필드를 기반으로 한 구조체
+         air_cd    TYPE spfli-carrid,           " 항공사 코드 (Alias: carrid -> air_cd)
+         countryfr TYPE spfli-countryfr,        " 출발 국가
+         countryto TYPE spfli-countryto,        " 도착 국가
+       END OF gs_spfli,
+       gt_spfli LIKE TABLE OF gs_spfli.         " 내부 테이블
+
+DATA : BEGIN OF gs_info,                         " SFLIGHT 테이블의 집계 데이터를 저장
+         air_cd   TYPE sflight-carrid,          " 항공사 코드
+         con_no   TYPE sflight-connid,          " 연결 항공편 번호
+         minseats TYPE sflight-seatsocc,        " 최소 좌석 점유율
+         maxseats TYPE sflight-seatsocc,        " 최대 좌석 점유율
+         sumseats TYPE sflight-seatsocc,        " 총 좌석 점유율
+       END OF gs_info,
+       gt_info LIKE TABLE OF gs_info.           " 내부 테이블
+
+DATA : gv_scarr    TYPE scarr,                  " SCARR 테이블을 참조하는 워크 에리어
+       gv_cityfrom TYPE spfli-cityfrom,         " 출발 도시
+       gv_cityto   TYPE spfli-cityto.           " 도착 도시
+
+**********************************************************************
+* Get data
+* 데이터 조회
+**********************************************************************
+
+*-- SPFLI 테이블에서 출발 국가와 도착 국가가 동일한 데이터를 조회
+CLEAR : gt_spfli, gs_spfli.                     " 내부 테이블과 워크 에리어 초기화
+
+SELECT carrid AS air_cd                         " carrid를 air_cd로 Alias 부여
+       countryfr                                " 출발 국가
+       countryto                                " 도착 국가
+  INTO CORRESPONDING FIELDS OF TABLE gt_spfli   " 데이터 매핑하여 내부 테이블에 삽입
+  FROM spfli AS a                               " spfli 테이블 Alias: a
+  WHERE countryfr EQ a~countryto.               " 출발 국가와 도착 국가가 동일한 데이터 필터링
+" 테이블 Alias(a)를 사용하여 a~countryto로 테이블을 명확히 지정
+
+*-- GROUP BY SQL 구문
+CLEAR : gt_info, gs_info.                       " 내부 테이블 및 워크 에리어 초기화
+
+SELECT carrid AS air_cd                         " carrid를 air_cd로 Alias 부여
+       connid AS con_no                         " connid를 con_no로 Alias 부여
+       MIN( seatsocc ) AS minseats             " 최소 좌석 점유율
+       MAX( seatsocc ) AS maxseats             " 최대 좌석 점유율
+       SUM( seatsocc ) AS sumseats             " 총 좌석 점유율
+  INTO CORRESPONDING FIELDS OF TABLE gt_info    " 데이터 매핑하여 내부 테이블에 삽입
+  FROM sflight                                  " SFLIGHT 테이블에서 데이터 조회
+  WHERE seatsocc GE 200                         " 예약된 좌석 수가 200 이상인 데이터 필터링
+  GROUP BY carrid connid                        " 항공사 코드와 연결 항공편 번호로 그룹화
+  HAVING SUM( seatsocc ) < 2000                 " 조건: 총 좌석 점유율이 2000 미만
+  AND carrid EQ 'DL'.                           " 조건: 항공사 코드가 'DL'
+
+*-- Get single record (단일 데이터 조회)
+CLEAR : gs_spfli, gv_scarr, gv_cityfrom, gv_cityto. " 변수 및 워크 에리어 초기화
+
+SELECT SINGLE carrid carrname currcode url      " 단일 데이터를 조회
+  INTO CORRESPONDING FIELDS OF gv_scarr         " SCARR 테이블 데이터를 gv_scarr에 매핑
+  FROM scarr
+  WHERE carrid EQ 'LH'.                         " 조건: 항공사 코드가 'LH'인 데이터
+
+cl_demo_output=>display( gv_scarr ).            " 조회 결과를 화면에 출력
+
+*-- 변수에 값 할당
+SELECT SINGLE countryfr cityfrom cityto         " 단일 데이터를 조회
+  INTO (gs_spfli-countryfr, gv_cityfrom, gv_cityto) " 값 매핑
+  FROM spfli
+  WHERE carrid EQ 'LH'.                         " 조건: 항공사 코드가 'LH'인 데이터
+
+**********************************************************************
+* SBOOK 테이블에서 특정 조건의 데이터를 조회
+**********************************************************************
+* SBOOK 테이블 선언 (주석 처리된 상태)
+* DATA gt_sbook TYPE TABLE OF sbook.
+
+* CLEAR gt_sbook.                               " 내부 테이블 초기화
+
+* SELECT bookid customid smoker                 " 예약 데이터 조회
+*   INTO CORRESPONDING FIELDS OF TABLE gt_sbook " 데이터 매핑하여 내부 테이블에 삽입
+*   FROM sbook
+*   WHERE custtype EQ 'P'                       " 조건: 고객 유형이 'P'
+*   AND bookid BETWEEN '0200' AND '0250'.       " 조건: 예약 번호가 0200과 0250 사이
+
+```
+
+---
+
+### **주석 요약**
+
+#### **1. 내부 테이블 및 워크 에리어 정의**
+- **`gs_spfli`, `gt_spfli`**: SPFLI 데이터를 저장하며, 항공사 코드(`carrid`)에 Alias(`air_cd`)를 적용.
+- **`gs_info`, `gt_info`**: SFLIGHT 데이터를 그룹화하여 최소, 최대, 총 좌석 점유율을 저장.
+- **`gv_scarr`**: SCARR 데이터(항공사 코드, 이름, 통화, URL)를 저장.
+
+---
+
+#### **2. 주요 SQL 구문**
+
+1. **Alias 사용 (`AS`)**:
+   - 테이블의 컬럼 이름에 별칭(Alias)을 부여하여 명확하게 표현.
+   - 예: `carrid AS air_cd`, `connid AS con_no`.
+
+2. **GROUP BY**:
+   - `GROUP BY`로 데이터를 그룹화.
+   - 항공사 코드(`carrid`)와 연결 항공편 번호(`connid`)로 그룹화.
+
+3. **HAVING**:
+   - `GROUP BY` 결과에 추가 조건을 적용.
+   - 예: `SUM( seatsocc ) < 2000`.
+
+4. **SINGLE SELECT**:
+   - 단일 행을 조회.
+   - 예: 항공사 코드가 `LH`인 SCARR 데이터를 조회.
+
+---
+
+#### **3. 출력 및 변수 사용**
+- **`cl_demo_output=>display`**:
+  - SAP 표준 메서드로 조회된 데이터를 출력.
+- **변수 값 할당**:
+  - `INTO` 구문을 사용하여 여러 변수에 값 매핑.
+
+---
+
+### **실행 흐름**
+
+1. SPFLI 테이블에서 출발 국가와 도착 국가가 동일한 데이터를 조회하여 내부 테이블(`gt_spfli`)에 저장.
+2. SFLIGHT 테이블에서 그룹화 및 조건을 적용하여 최소, 최대, 총 좌석 점유율을 계산하고 내부 테이블(`gt_info`)에 저장.
+3. SCARR 테이블에서 항공사 코드가 `LH`인 데이터를 단일 조회(`SELECT SINGLE`)하여 워크 에리어(`gv_scarr`)에 저장.
+4. 변수(`gv_cityfrom`, `gv_cityto`)에 값을 매핑하여 다른 데이터 처리에 활용.
+
+---
+
+아래는 주어진 코드에 주석을 추가하여 각 코드 라인의 목적과 수행 작업을 상세히 설명한 버전입니다. 각 구문은 데이터 처리 흐름을 이해하기 쉽도록 설명되었습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05007
+*&---------------------------------------------------------------------*
+*& 프로그램 설명:
+*& - BKPF 및 BSEG 데이터를 처리하여 내부 테이블에 저장하고 수정.
+*& - SCUSTOM 데이터를 SELECT로 조회.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05007.
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블과 워크 에리어 선언
+**********************************************************************
+DATA : BEGIN OF gs_bkpf_bseg,                     " BKPF 및 BSEG 데이터를 결합한 구조체
+         bukrs TYPE bkpf-bukrs,                  " 회사 코드
+         belnr TYPE bkpf-belnr,                  " 문서 번호
+         gjahr TYPE bkpf-gjahr,                  " 회계 연도
+         buzei TYPE bseg-buzei,                  " 문서 항목 번호
+         budat TYPE bkpf-budat,                  " 문서 날짜
+         bktxt TYPE bkpf-bktxt,                  " 문서 헤더 텍스트
+         wrbtr TYPE bseg-wrbtr,                  " 금액 (문서 통화 기준)
+         waers TYPE bkpf-waers,                  " 통화 코드
+         sgtxt TYPE bseg-sgtxt,                  " 항목 텍스트
+       END OF gs_bkpf_bseg,
+       gt_bkpf_bseg LIKE TABLE OF gs_bkpf_bseg.   " BKPF/BSEG 데이터를 저장하는 내부 테이블
+
+**********************************************************************
+* 데이터 삽입 및 초기화
+**********************************************************************
+CLEAR : gt_bkpf_bseg, gs_bkpf_bseg.               " 내부 테이블 및 워크 에리어 초기화
+
+* 첫 번째 데이터 삽입
+gs_bkpf_bseg-bukrs = '1000'.                      " 회사 코드
+gs_bkpf_bseg-belnr = '0010000007'.                " 문서 번호
+gs_bkpf_bseg-gjahr = '2025'.                      " 회계 연도
+gs_bkpf_bseg-buzei = '0002'.                      " 문서 항목 번호
+gs_bkpf_bseg-budat = sy-datum.                    " 시스템 날짜
+gs_bkpf_bseg-bktxt = 'Document header'.           " 문서 헤더 텍스트
+gs_bkpf_bseg-wrbtr = 15000.                       " 금액
+gs_bkpf_bseg-waers = 'KRW'.                       " 통화 코드 (한국 원화)
+gs_bkpf_bseg-sgtxt = 'Line item'.                 " 항목 텍스트
+
+APPEND gs_bkpf_bseg TO gt_bkpf_bseg.              " 내부 테이블에 데이터 추가
+
+* 두 번째 데이터 삽입 (INDEX 사용)
+CLEAR gs_bkpf_bseg.                               " 워크 에리어 초기화
+
+gs_bkpf_bseg-bukrs = '1000'.                      " 회사 코드
+gs_bkpf_bseg-belnr = '0010000006'.                " 문서 번호
+gs_bkpf_bseg-gjahr = '2024'.                      " 회계 연도
+gs_bkpf_bseg-buzei = '0001'.                      " 문서 항목 번호
+gs_bkpf_bseg-budat = sy-datum.                    " 시스템 날짜
+gs_bkpf_bseg-bktxt = 'Document insert header'.    " 문서 헤더 텍스트
+gs_bkpf_bseg-wrbtr = 7000.                        " 금액
+gs_bkpf_bseg-waers = 'KRW'.                       " 통화 코드
+gs_bkpf_bseg-sgtxt = 'Line item insert'.          " 항목 텍스트
+
+INSERT gs_bkpf_bseg INTO gt_bkpf_bseg INDEX 1.    " 첫 번째 위치에 데이터 삽입
+
+**********************************************************************
+* 데이터 읽기 및 수정
+**********************************************************************
+READ TABLE gt_bkpf_bseg INTO gs_bkpf_bseg INDEX 2. " 두 번째 행 데이터를 워크 에리어로 읽음
+
+* 읽은 데이터 수정
+gs_bkpf_bseg-bktxt = 'Document header updated'.   " 문서 헤더 텍스트 업데이트
+gs_bkpf_bseg-wrbtr = 12000.                       " 금액 업데이트
+gs_bkpf_bseg-waers = 'USD'.                       " 통화 코드 업데이트 (미국 달러)
+gs_bkpf_bseg-sgtxt = 'Line item updated'.         " 항목 텍스트 업데이트
+
+MODIFY gt_bkpf_bseg FROM gs_bkpf_bseg INDEX 2     " 내부 테이블 수정
+       TRANSPORTING bktxt wrbtr waers sgtxt.      " 특정 필드만 반영
+
+**********************************************************************
+* 결과 출력
+**********************************************************************
+cl_demo_output=>display( gt_bkpf_bseg ).          " 내부 테이블 데이터 출력
+
+**********************************************************************
+* SFLIGHT 데이터를 위한 추가 선언
+**********************************************************************
+DATA : BEGIN OF gs_sflight.
+         INCLUDE STRUCTURE scarr.                " SCARR 구조 포함
+DATA :   connid    TYPE sflight-connid,          " 연결 항공편 번호
+         fldate    TYPE sflight-fldate,          " 운항 날짜
+         price     TYPE sflight-price,           " 항공권 가격
+         currency  TYPE sflight-currency,        " 통화
+         planetype TYPE sflight-planetype,       " 항공기 유형
+       END OF gs_sflight,
+       gt_sflight LIKE TABLE OF gs_sflight.      " 내부 테이블
+
+**********************************************************************
+* SCUSTOM 데이터를 위한 선언 및 SELECT
+**********************************************************************
+TYPES : BEGIN OF ts_scustom,                     " SCUSTOM 데이터를 위한 타입 정의
+          id     TYPE scustom-id,                " 고객 ID
+          name   TYPE scustom-name,              " 고객 이름
+          form   TYPE scustom-form,              " 고객 형식 (회사/개인)
+          street TYPE scustom-street,            " 고객 주소 (거리)
+          city   TYPE scustom-city,              " 고객 주소 (도시)
+          email  TYPE scustom-email,             " 고객 이메일
+        END OF ts_scustom.
+
+DATA gt_scustom TYPE TABLE OF ts_scustom.         " SCUSTOM 데이터를 저장하는 내부 테이블
+
+SELECT id name form street city email            " SCUSTOM 테이블 데이터 조회
+  FROM scustom
+  INTO CORRESPONDING FIELDS OF TABLE gt_scustom  " 데이터 매핑하여 내부 테이블에 저장
+  WHERE id GE 24                                 " 조건: 고객 ID가 24 이상
+  AND form NE 'Firma'                            " 조건: 형식이 'Firma'(회사)가 아닌 경우
+  AND region EQ 'PA'.                            " 조건: 지역이 'PA'(파나마)인 경우
+
+**********************************************************************
+* 주석 처리된 코드: SBOOK 테이블 데이터를 SELECT하는 예제
+**********************************************************************
+* DATA gt_sbook TYPE TABLE OF sbook.             " SBOOK 데이터를 저장할 내부 테이블
+* CLEAR gt_sbook.                                " 초기화
+*
+* SELECT bookid customid smoker                  " SBOOK 테이블 데이터 조회
+*   INTO CORRESPONDING FIELDS OF TABLE gt_sbook  " 데이터 매핑하여 내부 테이블에 저장
+*   WHERE custtype EQ 'P'                        " 조건: 고객 유형이 'P'
+*   AND bookid BETWEEN '0200' AND '0250'.        " 조건: 예약 ID가 0200과 0250 사이
+```
+
+---
+
+### **코드 설명 요약**
+
+#### **1. BKPF와 BSEG 데이터를 다루는 코드**
+- BKPF와 BSEG 데이터를 결합한 구조체(`gs_bkpf_bseg`)와 내부 테이블(`gt_bkpf_bseg`)을 생성.
+- 데이터를 삽입(`APPEND`, `INSERT`), 읽기(`READ TABLE`), 수정(`MODIFY`) 과정을 포함.
+- `TRANSPORTING` 옵션을 사용해 필요한 필드만 수정.
+
+#### **2. SCUSTOM 데이터를 SELECT**
+- 고객 ID(`id`), 이름(`name`), 형식(`form`), 주소(`street`, `city`), 이메일(`email`) 데이터를 조회.
+- 조건:
+  - ID가 24 이상.
+  - 형식이 회사(`Firma`)가 아님.
+  - 지역이 파나마(`PA`).
+
+#### **3. SFLIGHT와 SCUSTOM 선언**
+- SFLIGHT 데이터를 저장하는 구조체와 내부 테이블 선언.
+- SCUSTOM 데이터를 위한 타입(`ts_scustom`) 정의 및 내부 테이블(`gt_scustom`) 선언.
+
+---
+
+### **학습 포인트**
+1. **내부 테이블 조작**:
+   - `APPEND`, `INSERT`, `READ TABLE`, `MODIFY` 등 다양한 내부 테이블 작업.
+2. **SQL 구문**:
+   - `CORRESPONDING FIELDS`, `WHERE`, `NE`, `GE`, `EQ` 조건 사용.
+3. **데이터 매핑**:
+   - `INTO CORRESPONDING FIELDS`를 통해 테이블 데이터를 자동 매핑.
+
+추가 질문이 있으면 언제든 말씀해주세요! 😊
+
+아래는 주어진 코드에 상세한 **주석**을 추가한 버전입니다. 각 SQL 구문과 데이터 정의가 무엇을 수행하는지 설명하며, 결과 예시는 생략했습니다.
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05008
+*&---------------------------------------------------------------------*
+*& 프로그램 설명:
+*& - 다양한 테이블(JOIN 포함)에서 데이터를 조회하고 내부 테이블에 적재.
+*& - JOIN, WHERE 조건, GROUPING 등을 포함한 SQL 문법을 활용.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05008.
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블과 워크 에리어 선언
+**********************************************************************
+
+* 스케줄 정보를 저장하는 테이블
+DATA : BEGIN OF gs_schedule,
+         carrid   TYPE scarr-carrid,          " 항공사 코드
+         connid   TYPE spfli-connid,          " 연결 항공편 번호
+         cityfrom TYPE spfli-cityfrom,        " 출발 도시
+         cityto   TYPE spfli-cityto,          " 도착 도시
+         carrname TYPE scarr-carrname,        " 항공사 이름
+       END OF gs_schedule,
+       gt_schedule LIKE TABLE OF gs_schedule.
+
+* 항공편 정보를 저장하는 테이블
+DATA : BEGIN OF gs_flight,
+         carrid   TYPE spfli-carrid,          " 항공사 코드
+         connid   TYPE spfli-connid,          " 연결 항공편 번호
+         fldate   TYPE sflight-fldate,        " 운항 일자
+         airpfrom TYPE spfli-airpfrom,        " 출발 공항
+         airpto   TYPE spfli-airpto,          " 도착 공항
+         seatsmax TYPE sflight-seatsmax,      " 최대 좌석 수
+         seatsocc TYPE sflight-seatsocc,      " 점유된 좌석 수
+       END OF gs_flight,
+       gt_flight LIKE TABLE OF gs_flight.
+
+* 항공사 정보를 저장하는 테이블
+DATA : BEGIN OF gs_airline,
+         carrid   TYPE scarr-carrid,          " 항공사 코드
+         connid   TYPE spfli-connid,          " 연결 항공편 번호
+         cityfrom TYPE spfli-cityfrom,        " 출발 도시
+         cityto   TYPE spfli-cityto,          " 도착 도시
+         seatsmax TYPE sflight-seatsmax,      " 최대 좌석 수
+         seatsocc TYPE sflight-seatsocc,      " 점유된 좌석 수
+         carrname TYPE scarr-carrname,        " 항공사 이름
+       END OF gs_airline,
+       gt_airline LIKE TABLE OF gs_airline.
+
+* 예약 정보를 저장하는 테이블
+DATA : BEGIN OF gs_booking,
+         carrid   TYPE spfli-carrid,          " 항공사 코드
+         connid   TYPE spfli-connid,          " 연결 항공편 번호
+         fldate   TYPE sflight-fldate,        " 운항 일자
+         bookid   TYPE sbook-bookid,          " 예약 번호
+         cityfrom TYPE spfli-cityfrom,        " 출발 도시
+         cityto   TYPE spfli-cityto,          " 도착 도시
+         seatsmax TYPE sflight-seatsmax,      " 최대 좌석 수
+         seatsocc TYPE sflight-seatsocc,      " 점유된 좌석 수
+         custtype TYPE sbook-custtype,        " 고객 유형
+         smoker   TYPE sbook-smoker,          " 흡연 여부
+       END OF gs_booking,
+       gt_booking LIKE TABLE OF gs_booking.    " 내부 테이블
+
+* 자재 정보를 저장하는 테이블
+DATA : BEGIN OF gs_mara_marc,
+         matnr TYPE mara-matnr,               " 자재 번호
+         werks TYPE marc-werks,               " 플랜트
+         ersda TYPE mara-ersda,               " 생성 날짜
+         mtart TYPE mara-mtart,               " 자재 유형
+         pstat TYPE marc-pstat,               " 플랜트 상태
+       END OF gs_mara_marc,
+       gt_mara_marc LIKE TABLE OF gs_mara_marc.
+
+**********************************************************************
+* Get data - JOIN SQL
+**********************************************************************
+
+*-- SCARR와 SPFLI를 INNER JOIN하여 데이터 조회
+CLEAR : gt_schedule, gs_schedule.
+SELECT a~carrid b~connid b~cityfrom b~cityto a~carrname
+  INTO CORRESPONDING FIELDS OF TABLE gt_schedule
+  FROM scarr AS a INNER JOIN spfli AS b
+  ON a~carrid EQ b~carrid                      " 두 테이블의 CARRID로 조인
+  WHERE b~connid BETWEEN '0400' AND '0800'.   " 조건: CONNID가 0400에서 0800 사이
+
+*-- SPFLI와 SFLIGHT를 INNER JOIN하여 데이터 조회
+CLEAR : gt_flight, gs_flight.
+SELECT a~carrid a~connid fldate airpfrom airpto seatsmax seatsocc
+  INTO CORRESPONDING FIELDS OF TABLE gt_flight
+  FROM spfli AS a INNER JOIN sflight AS b
+  ON a~carrid EQ b~carrid                     " SPFLI와 SFLIGHT의 CARRID 조인
+  AND a~connid EQ b~connid                    " SPFLI와 SFLIGHT의 CONNID 조인
+  WHERE b~connid BETWEEN '0400' AND '0800'    " 조건: CONNID 범위 지정
+  ORDER BY b~connid.                          " 정렬: CONNID 기준 오름차순
+
+*-- SCARR와 SPFLI를 LEFT OUTER JOIN하여 데이터 조회
+SELECT a~carrid connid cityfrom cityto carrname
+  INTO CORRESPONDING FIELDS OF TABLE gt_schedule
+  FROM scarr AS a LEFT OUTER JOIN spfli AS b
+  ON a~carrid EQ b~carrid                     " SCARR와 SPFLI의 CARRID 조인
+  WHERE a~carrid BETWEEN 'AA' AND 'ZZ'.      " 조건: CARRID가 AA와 ZZ 사이
+
+*-- SCARR, SPFLI, SFLIGHT를 다중 JOIN하여 데이터 조회
+CLEAR : gt_airline, gs_airline.
+SELECT a~carrid b~connid cityfrom cityto seatsmax seatsocc carrname
+  INTO CORRESPONDING FIELDS OF TABLE gt_airline
+  FROM scarr AS a INNER JOIN spfli AS b
+  ON a~carrid EQ b~carrid                    " SCARR와 SPFLI 조인
+              INNER JOIN sflight AS c
+  ON b~carrid EQ c~carrid                    " SPFLI와 SFLIGHT의 CARRID 조인
+  AND b~connid EQ c~connid                   " SPFLI와 SFLIGHT의 CONNID 조인
+  WHERE b~connid BETWEEN '0400' AND '0800'.  " 조건: CONNID 범위 지정
+
+*-- SPFLI, SFLIGHT, SBOOK을 다중 JOIN하여 데이터 조회
+CLEAR : gt_booking, gs_booking.
+SELECT a~carrid b~connid c~fldate bookid cityfrom cityto
+       seatsmax seatsocc custtype smoker
+  INTO CORRESPONDING FIELDS OF TABLE gt_booking
+  FROM spfli AS a INNER JOIN sflight AS b
+  ON a~carrid  EQ b~carrid                   " SPFLI와 SFLIGHT 조인
+  AND a~connid EQ b~connid                   " CONNID로 조인
+                  INNER JOIN sbook AS c
+  ON b~carrid  EQ c~carrid                   " SFLIGHT와 SBOOK의 CARRID 조인
+  AND b~connid EQ c~connid                   " CONNID로 조인
+  AND b~fldate EQ c~fldate                   " 운항 일자로 조인
+  WHERE b~connid BETWEEN '0400' AND '0800'.  " 조건: CONNID 범위 지정
+
+*-- MARA와 MARC를 JOIN하여 데이터 조회
+CLEAR : gs_mara_marc, gt_mara_marc.
+SELECT a~matnr werks ersda mtart b~pstat
+  INTO CORRESPONDING FIELDS OF TABLE gt_mara_marc
+  FROM mara AS a INNER JOIN marc AS b
+  ON a~matnr EQ b~matnr.                     " MARA와 MARC의 MATNR 조인
+
+*-- MARA와 T134T를 JOIN하여 자재 데이터를 조회
+DATA : BEGIN OF gs_material,
+         matnr TYPE mara-matnr,              " 자재 번호
+         ersda TYPE mara-ersda,              " 생성 날짜
+         vpsta TYPE mara-vpsta,              " 상태 코드
+         pstat TYPE mara-pstat,              " 플랜트 상태
+         mtart TYPE mara-mtart,              " 자재 유형
+         mtbez TYPE t134t-mtbez,             " 자재 유형 설명
+         ntgew TYPE mara-ntgew,              " 순수 중량
+         gewei TYPE mara-gewei,              " 중량 단위
+       END OF gs_material,
+       gt_material LIKE TABLE OF gs_material.
+
+CLEAR : gt_material, gs_material.
+SELECT matnr ersda vpsta pstat a~mtart mtbez ntgew gewei
+  INTO CORRESPONDING FIELDS OF TABLE gt_material
+  FROM mara AS a INNER JOIN t134t AS b
+  ON a~mtart = b~mtart                     " MARA와 T134T의 MTART 조인
+  WHERE b~spras EQ sy-langu.               " 조건: 현재 시스템 언어
+
+cl_demo_output=>display( gt_material ).     " 결과 출력
+```
+
+---
+
+### **주요 설명**
+1. **INNER JOIN**:
+   - 공통 키를 사용해 두 테이블의 데이터를 조합.
+   - 예: `ON a~carrid EQ b~carrid`.
+
+2. **LEFT OUTER JOIN**:
+   - 왼쪽 테이블의 모든 데이터를 포함하며, 오른쪽 테이블은 조건에 맞는 데이터만 포함.
+
+3. **WHERE 조건**:
+   - 범위(`BETWEEN`), 언어 조건(`spras EQ sy-langu`), 기타 필터링 조건 적용.
+
+4. **CORRESPONDING FIELDS**:
+   - 테이블의 필드 이름과 내부 테이블 필드 이름이 동일할 때 자동 매핑.
+
+---
+
+추가 질문이 있으면 언제든 말씀해주세요! 😊
+
+아래는 주어진 코드에 상세한 주석을 추가하여 각 부분이 수행하는 작업과 프로세스를 설명한 버전입니다. 
+
+```abap
+*&---------------------------------------------------------------------*
+*& Report ZCL1R05009
+*&---------------------------------------------------------------------*
+*& 프로그램 설명:
+*& - ZTCL1BOARD05 테이블을 기반으로 CRUD 작업 수행.
+*& - 단일 및 다중 레코드 삽입, 업데이트, 삭제, 수정 등의 SQL 작업을 포함.
+*&---------------------------------------------------------------------*
+REPORT zcl1r05009.
+
+**********************************************************************
+* Internal table and Work area
+* 내부 테이블과 워크 에리어 선언
+**********************************************************************
+DATA : gt_board TYPE TABLE OF ztcl1board05, " ZTCL1BOARD05 테이블 구조의 내부 테이블
+       gs_board TYPE ztcl1board05.          " ZTCL1BOARD05 테이블 구조의 워크 에리어
+
+**********************************************************************
+* Main Logic
+* 주요 로직
+**********************************************************************
+
+CLEAR : gt_board, gs_board. " 내부 테이블 및 워크 에리어 초기화
+
+*-- Creation of Single record (단일 레코드 생성)
+gs_board-seqno    = 1.         " 순번
+gs_board-author   = sy-uname.  " 작성자: 시스템 사용자 이름
+gs_board-comp     = '1000'.    " 회사 코드
+gs_board-zyear    = sy-datum.  " 작성 날짜 (4자리로 자동 변환)
+gs_board-zip_code = '113870'.  " 우편번호
+gs_board-zzone    = 'A'.       " 지역 코드
+
+INSERT ztcl1board05 FROM gs_board. " 단일 레코드 삽입
+
+IF sy-subrc EQ 0.              " 삽입 성공 여부 확인
+  COMMIT WORK.                 " 데이터베이스 커밋
+ENDIF.
+
+*-- Creation of multiple records (다중 레코드 생성)
+gs_board-seqno    = 2.
+gs_board-author   = sy-uname.
+gs_board-comp     = '2000'.    
+gs_board-zyear    = sy-datum.
+gs_board-zip_code = '113870'.  
+gs_board-zzone    = 'A'.
+
+APPEND gs_board TO gt_board.   " 내부 테이블에 레코드 추가
+
+CLEAR gs_board.
+gs_board-seqno    = 3.
+gs_board-author   = sy-uname.
+gs_board-comp     = '3000'.    
+gs_board-zyear    = sy-datum.
+gs_board-zip_code = '113871'.  
+gs_board-zzone    = 'C'.
+
+APPEND gs_board TO gt_board.   " 내부 테이블에 추가 레코드 삽입
+
+INSERT ztcl1board05 FROM TABLE gt_board         " 내부 테이블 데이터를 테이블에 삽입
+                    ACCEPTING DUPLICATE KEYS.   " 중복 키 허용
+
+*-- Update of single record (단일 레코드 업데이트)
+CLEAR gs_board.
+gs_board-seqno  = 1.         " 업데이트할 레코드의 기본 키 (PK)
+gs_board-author = sy-uname.
+
+gs_board-comp  = '3000'.     " 업데이트할 필드 값
+gs_board-zyear = '2024'.
+
+UPDATE ztcl1board05 FROM gs_board. " 단일 레코드 업데이트
+
+*-- Update after SELECT SINGLE (단일 조회 후 업데이트)
+CLEAR gs_board.
+SELECT SINGLE *                             " 단일 레코드 조회
+  INTO CORRESPONDING FIELDS OF gs_board
+  FROM ztcl1board05
+ WHERE seqno  EQ 3                         " 조건: 순번
+   AND author EQ sy-uname.                 " 조건: 작성자
+
+gs_board-comp  = '4500'.                   " 필드 업데이트
+gs_board-zyear = '2024'.
+
+UPDATE ztcl1board05 FROM gs_board.         " 테이블에 업데이트 반영
+
+*-- Update using SET mode (SET 구문 사용 업데이트)
+UPDATE ztcl1board05
+SET comp     = '1000',                    " 업데이트할 필드와 값
+    zyear    = '2000',
+    zip_code = '555555'
+WHERE seqno  EQ 2                        " 조건: 순번
+  AND author EQ sy-uname.                " 조건: 작성자
+
+*-- Update multiple records (다중 레코드 업데이트)
+CLEAR : gt_board, gs_board.
+
+gs_board-seqno  = 1.
+gs_board-author = 'LSW'.                  " 업데이트할 기본 키
+
+gs_board-kind  = 'C1'.                    " 업데이트할 일반 필드
+gs_board-title = 'MULTIPLE TITLE'.
+
+APPEND gs_board TO gt_board.              " 내부 테이블에 추가
+
+CLEAR gs_board.
+gs_board-seqno  = 2.
+gs_board-author = 'LEE'.
+
+gs_board-kind  = 'D1'.
+gs_board-title = 'MULTIPLE TITLE2'.
+
+APPEND gs_board TO gt_board.
+
+UPDATE ztcl1board05 FROM TABLE gt_board.  " 다중 레코드 업데이트
+
+*-- Delete of single record (단일 레코드 삭제)
+CLEAR gs_board.
+gs_board-seqno  = 3.
+gs_board-author = 'KIM'.                  " 삭제할 레코드 조건
+
+DELETE ztcl1board05 FROM gs_board.        " 단일 레코드 삭제
+
+*-- Delete of multiple records (다중 레코드 삭제)
+CLEAR : gs_board, gt_board.
+
+gs_board-seqno  = 1.
+gs_board-author = 'LSW'.
+
+APPEND gs_board TO gt_board.
+
+gs_board-seqno  = 2.
+gs_board-author = 'LEE'.
+
+APPEND gs_board TO gt_board.
+
+DELETE ztcl1board05 FROM TABLE gt_board.  " 다중 레코드 삭제
+
+DELETE FROM ztcl1board05                  " 직접 SQL을 사용한 삭제
+WHERE seqno = 3.
+
+*-- Using MODIFY: single and multiple records (MODIFY를 사용한 레코드 처리)
+CLEAR : gs_board.
+
+gs_board-seqno  = 5.
+gs_board-author = sy-uname.
+gs_board-title  = 'NEW INSERTED'.
+
+MODIFY ztcl1board05 FROM gs_board.        " 새로운 레코드 생성
+
+gs_board-seqno  = 5.
+gs_board-author = sy-uname.
+gs_board-title  = 'NEW UPDATED'.
+
+MODIFY ztcl1board05 FROM gs_board.        " 레코드 업데이트
+
+CLEAR : gt_board, gs_board.
+
+gs_board-seqno  = 2.
+gs_board-author = sy-uname.
+gs_board-title  = 'UPDATED BY MODIFY'.
+
+APPEND gs_board TO gt_board.              " 내부 테이블에 추가
+
+gs_board-seqno  = 6.
+gs_board-author = sy-uname.
+gs_board-title  = 'CREATED BY MODIFY'.
+
+APPEND gs_board TO gt_board.
+
+MODIFY ztcl1board05 FROM TABLE gt_board.  " 다중 레코드 생성 및 업데이트
+
+*-- Transaction Management (트랜잭션 관리)
+IF sy-subrc EQ 0.                          " 성공 시 커밋
+  COMMIT WORK.
+ELSE.                                      " 실패 시 롤백
+  ROLLBACK WORK.
+ENDIF.
+```
+
+---
+
+### **주요 코드 설명**
+
+#### **1. INSERT**
+- **단일 레코드**: `INSERT ztcl1board05 FROM gs_board`.
+- **다중 레코드**: `INSERT ztcl1board05 FROM TABLE gt_board ACCEPTING DUPLICATE KEYS`.
+
+#### **2. UPDATE**
+- **SET 구문**: `UPDATE ztcl1board05 SET comp = '1000', ... WHERE 조건`.
+- **다중 레코드**: `UPDATE ztcl1board05 FROM TABLE gt_board`.
+
+#### **3. DELETE**
+- **단일 레코드 삭제**: `DELETE ztcl1board05 FROM gs_board`.
+- **다중 레코드 삭제**: `DELETE ztcl1board05 FROM TABLE gt_board`.
+
+#### **4. MODIFY**
+- **단일/다중 레코드 삽입 및 업데이트**:
+  - `MODIFY ztcl1board05 FROM gs_board`.
+  - `MODIFY ztcl1board05 FROM TABLE gt_board`.
+
+#### **5. TRANSACTION**
+- **커밋**: `COMMIT WORK`.
+- **롤백**: `ROLLBACK WORK`.
+
+---
+
+### **학습 포인트**
+1. CRUD 작업(삽입, 조회, 업데이트, 삭제) 수행 방법.
+2. 단일 및 다중 레코드에 대한 처리.
+3. `MODIFY`를 활용한 데이터 삽입과 업데이트의 통합.
+4. 트랜잭션 관리(`COMMIT`, `ROLLBACK`).
+
+추가 질문이나 코드의 다른 부분에 대한 설명이 필요하면 알려주세요! 😊
