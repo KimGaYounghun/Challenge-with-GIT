@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>항공기 좌석 관리</title>
+  <style>
+    body {
+      background-color: #e0f7fa;
+      color: #004d60;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar, .sidebar-right {
+      width: 280px;
+      background-color: #b2ebf2;
+      padding: 16px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .sidebar-right {
+      background-color: #e0f2f1;
+      border-left: 2px solid #4dd0e1;
+    }
+
+    .sidebar h2, .sidebar-right h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .flight-entry {
+      margin-bottom: 16px;
+      padding: 8px;
+      background-color: #ffffff;
+      border: 2px solid #4dd0e1;
+      border-radius: 8px;
+    }
+
+    .flight-entry.active {
+      border-color: #00acc1;
+    }
+
+    .flight-entry.confirmed {
+      background-color: #cfd8dc;
+      border-color: #90a4ae;
+      opacity: 0.7;
+    }
+
+    .sidebar table, .sidebar-right table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+
+    .sidebar th, .sidebar td, .sidebar-right th, .sidebar-right td {
+      padding: 3px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: scroll;
+      padding: 20px 4px;
+      position: relative;
+    }
+
+    .airplane-container {
+      width: 55%;
+      max-width: 620px;
+      background-color: #ffffff;
+      border: 4px solid #00acc1;
+      border-radius: 80px / 150px;
+      padding: 24px 6px;
+      margin: 20px auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .seat-map {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .seat-row {
+      display: flex;
+      gap: 3px;
+    }
+
+    .aisle {
+      width: 48px; /* wider aisle for P seats */
+    }
+
+    .seat {
+      width: 32px;
+      height: 32px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+    }
+
+    .seat.p-class {
+      background-color: purple;
+    }
+
+    .seat.e-class {
+      background-color: green;
+    }
+
+    .seat.preselected {
+      background-color: orange;
+    }
+
+    .seat.disabled {
+      background-color: #777 !important;
+      cursor: not-allowed;
+    }
+
+    .confirm-btn {
+      padding: 6px 12px;
+      background-color: #00acc1;
+      border: none;
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .confirm-btn.confirmed {
+      background-color: #607d8b;
+      cursor: default;
+    }
+
+    .reset-btn {
+      margin-top: 16px;
+      padding: 6px 12px;
+      font-size: 12px;
+      background-color: #f44336;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .wing {
+      position: absolute;
+      width: 500px;
+      height: 160px;
+      background: radial-gradient(circle at 100px 80px, #c8e6c9 40%, transparent 70%);
+      top: 48%;
+      transform: translateY(-50%) rotate(15deg);
+      z-index: -1;
+      opacity: 0.6;
+    }
+
+    .wing-left {
+      left: -440px;
+      transform: translateY(-50%) rotate(-15deg);
+    }
+
+    .wing-right {
+      right: -440px;
+      transform: translateY(-50%) rotate(15deg);
+    }
+
+    .tail {
+      position: absolute;
+      width: 140px;
+      height: 180px;
+      background: linear-gradient(to top, #80deea, transparent);
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%) rotate(0deg);
+      border-bottom-left-radius: 80px;
+      border-bottom-right-radius: 80px;
+      z-index: -2;
+      opacity: 0.9;
+    }
+    .tail {
+    position: absolute;
+    bottom: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 400px;
+    background: radial-gradient(ellipse at center, #e0f7fa 0%, #b2ebf2 70%, transparent 100%);
+    clip-path: polygon(50% 0%, 60% 15%, 75% 30%, 85% 50%, 95% 80%, 50% 100%, 5% 80%, 15% 50%, 25% 30%, 40% 15%);
+    z-index: -1;
+    opacity: 0.8;
+  }
+</style>
+    </head>
+<body>
+  <div class="sidebar">
+    <h2>확정 가능한 항공편</h2>
+    <div id="flights-pending"></div>
+    <button class="reset-btn" onclick="resetAll()">초기화</button>
+  </div>
+
+  <div class="main">
+    <div class="airplane-container">
+      <div class="wing wing-left"></div>
+      <div class="wing wing-right"></div>
+      <div class="seat-map" id="seat-map"></div>
+    </div>
+  </div>
+
+  <div class="sidebar-right">
+    <h2>확정된 항공편</h2>
+    <div id="flights-confirmed"></div>
+  </div>
+
+  <script>
+    const TOTAL_SEATS = 650;
+    const seatMap = document.getElementById('seat-map');
+    const pendingContainer = document.getElementById('flights-pending');
+    const confirmedContainer = document.getElementById('flights-confirmed');
+    const seatElements = [];
+
+    const flightData = [
+      { flightNo: 'KE123', departure: 'ICN', arrival: 'LAX', time: '10:30', remaining: 42 },
+      { flightNo: 'OZ456', departure: 'GMP', arrival: 'HND', time: '13:50', remaining: 35 },
+      { flightNo: 'JL789', departure: 'NRT', arrival: 'CDG', time: '21:15', remaining: 58 }
+    ];
+
+    const savedStates = JSON.parse(localStorage.getItem('confirmedFlights') || '{}');
+    const disabledSeats = JSON.parse(localStorage.getItem('disabledSeats') || '{}');
+
+    flightData.forEach((flight, index) => {
+      if (!disabledSeats[flight.flightNo]) disabledSeats[flight.flightNo] = [];
+
+      const entry = document.createElement('div');
+      entry.className = 'flight-entry';
+      entry.innerHTML = `
+        <table>
+          <tr><th>항공편</th><td>${flight.flightNo}</td></tr>
+          <tr><th>출발</th><td>${flight.departure}</td></tr>
+          <tr><th>도착</th><td>${flight.arrival}</td></tr>
+          <tr><th>시간</th><td>${flight.time}</td></tr>
+          <tr><th>예약 좌석</th><td class="remaining">${flight.remaining}</td></tr>
+        </table>
+      `;
+      entry.addEventListener('click', () => selectFlight(index));
+
+      if (savedStates[flight.flightNo]) {
+        entry.classList.add('confirmed');
+        confirmedContainer.appendChild(entry);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'confirm-btn';
+        btn.textContent = '좌석 확정';
+        btn.onclick = (e) => confirmSeats(e, index);
+        entry.appendChild(btn);
+        pendingContainer.appendChild(entry);
+      }
+    });
+
+    let selectedFlight = 0;
+    let seatCount = 0;
+    while (seatCount < TOTAL_SEATS) {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'seat-row';
+
+      const layout = seatCount < 186 ? [4, 'aisle', 4] : [5, 'aisle', 3, 'aisle', 5];
+
+      for (let section of layout) {
+        if (section === 'aisle') {
+          const aisle = document.createElement('div');
+          aisle.className = 'aisle';
+          rowDiv.appendChild(aisle);
+        } else {
+          for (let i = 0; i < section && seatCount < TOTAL_SEATS; i++) {
+            seatCount++;
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.dataset.index = seatCount;
+            if (seatCount <= 192) {
+              seat.textContent = `P${seatCount.toString().padStart(3, '0')}`;
+              seat.classList.add('p-class');
+            } else {
+              seat.textContent = `E${seatCount.toString().padStart(3, '0')}`;
+              seat.classList.add('e-class');
+            }
+            seatElements.push(seat);
+            rowDiv.appendChild(seat);
+          }
+        }
+      }
+      seatMap.appendChild(rowDiv);
+    }
+
+    function selectFlight(index) {
+      const flight = flightData[index];
+      selectedFlight = index;
+      document.querySelectorAll('.flight-entry').forEach((f, i) => f.classList.remove('active'));
+      document.querySelectorAll('.seat').forEach(seat => seat.classList.remove('disabled', 'preselected'));
+
+      if (!savedStates[flight.flightNo]) {
+        let count = 0;
+        for (let i = seatElements.length - 1; i >= 0; i--) {
+          if (count >= flight.remaining) break;
+          if (!disabledSeats[flight.flightNo].includes(i + 1)) {
+            seatElements[i].classList.add('preselected');
+            count++;
+          }
+        }
+      }
+      disabledSeats[flight.flightNo].forEach(idx => {
+        document.querySelector(`.seat[data-index='${idx}']`)?.classList.add('disabled');
+      });
+      document.querySelector('.main').scrollTo({ top: seatMap.scrollHeight, behavior: 'smooth' });
+    }
+
+    function confirmSeats(e, index) {
+      e.stopPropagation();
+      const flight = flightData[index];
+      if (savedStates[flight.flightNo]) return;
+      if (!window.confirm("선택하신 좌석을 확정하시겠습니까?")) return;
+      const seats = document.querySelectorAll('.seat.preselected');
+      seats.forEach(seat => {
+        seat.classList.remove('preselected');
+        seat.classList.add('disabled');
+        disabledSeats[flight.flightNo].push(parseInt(seat.dataset.index));
+      });
+      savedStates[flight.flightNo] = true;
+      localStorage.setItem('disabledSeats', JSON.stringify(disabledSeats));
+      localStorage.setItem('confirmedFlights', JSON.stringify(savedStates));
+      location.reload();
+    }
+
+    function resetAll() {
+      if (!confirm('정말 초기화하시겠습니까?')) return;
+      localStorage.removeItem('disabledSeats');
+      localStorage.removeItem('confirmedFlights');
+      location.reload();
+    }
+
+    selectFlight(0);
+  </script>
+</body>
+</html>
